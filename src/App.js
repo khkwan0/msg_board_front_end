@@ -45,12 +45,7 @@ class Postsubject extends Component {
     })
     .then((res) => { return res.json() })
     .then((data) => {
-      this.props.funcNewPost(data);
-      this.setState({
-        saving:false,
-        postSubj: '',
-        postMsg: ''
-      })
+      this.props.getPostHandler(data)
     })
     .catch((err) => {
       console.log(err);
@@ -86,15 +81,15 @@ class PostItems extends Component {
         <div>
           <table>
             <thead>
-              <tr><th>Who</th><th>Subject</th><th>When</th></tr>
+              <tr><th>Who</th><th>When</th><th>What</th></tr>
             </thead>
             <tbody>
               {this.props.posts.map((item, idx) => {
                 return(
                   <tr key={item._id}>
                     <td className="post_author"><Postauthor authorId={item.author_id} authorName={item.author_name} /></td>
-                    <td className="post_subject"><Postsubject postId={item._id} postSubject={item.subj} /></td>
                     <td>{item.ts}</td>
+                    <td className="post_subject"><Postsubject postId={item._id} postSubject={item.subj} getPostHandler={this.props.getPostHandler} /></td>
                   </tr>
                 )
               })}
@@ -115,14 +110,14 @@ class Posts extends Component {
           <h2>Latest Posts</h2>
         </div>
         <div>
-          <PostItems posts={this.props.posts} />
+          <PostItems posts={this.props.posts} getPostHandler={this.props.getPostHandler} />
         </div>
       </div>
     );
   }
 }
 
-class Postbox extends Component {
+class CreatePostbox extends Component {
   constructor() {
     super();
     this.state = {
@@ -144,7 +139,8 @@ class Postbox extends Component {
       })
       let newPost = {
         subj: this.state.postSubj,
-        post: this.state.postMsg
+        post: this.state.postMsg,
+        parent_id: 0
       }
       fetch('http://23.239.1.81:2999/savepost', {
         credentials: 'include',
@@ -163,10 +159,6 @@ class Postbox extends Component {
           postSubj: '',
           postMsg: ''
         })
-          /*
-        if (data.err_msg === 'OK') {
-        }
-        */
       })
       .catch((err) => {
         console.log(err);
@@ -346,13 +338,137 @@ class Greeting extends Component {
   }
 }
 
+class PostComment extends Component {
+  constructor() {
+    super();
+    this.state = {
+      comment: '',
+      saving: false
+    }
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+
+  handleSubmit(e) {
+    e.preventDefault();
+    if (this.state.comment) {
+      this.setState({
+        saving:true
+      })
+      let newPost = {
+        subj: 'Comment in reply to:',
+        post: this.state.postMsg,
+        parent_id: this.props.parentId
+      }
+      fetch('http://23.239.1.81:2999/savepost', {
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        method: 'POST',
+        body: JSON.stringify(newPost)
+      })
+      .then((res) => { return res.json() })
+      .then((data) => {
+        this.props.liftNewComment(data);
+        this.setState({
+          saving:false,
+          comment: ''
+        })
+      })
+      .catch((err) => {
+        console.log(err);
+        this.setState({
+          saving:false,
+          error: err
+        })
+      })
+    }
+  }
+
+  handleChange(e) {
+    this.setState(
+      {
+        comment: e.target.value
+      }
+    );
+  }
+  render() {
+    return (
+      <form onSubmit={this.handleSubmit}>
+        <div>
+          <textarea onChange={this.handleChange} value={this.state.comment}></textarea>
+        </div>
+        <div>
+          <input type="submit" value="Comment" />
+        </div>
+      </form>
+    )
+  }
+}
+
+class Comments extends Component {
+  render() {
+    if (this.props.postComments.length > 0) {
+      return (
+        <div>
+          {this.props.postComments.map((comment) => {
+            return (
+              <div>{comment}</div>
+            )
+          })}
+        </div>
+      )
+    }
+    return null;
+  }
+}
+
+class Post extends Component {
+  constructor() {
+    super();
+    this.state = {
+      comments: []
+    }
+    this.handleNewComment = this.handleNewComment.bind(this);
+  }
+
+  handleNewComment(comment) {
+    this.setState({comments: this.state.comments.push(comment)})
+  }
+
+  render() {
+    if (this.props.aPost) {
+      return(
+       <div>
+        <div>
+          <div>{this.props.aPost.author_name}</div>
+          <div>{this.props.aPost.ts}</div>
+          <div>{this.props.aPost.subj}</div>
+          <div>{this.props.aPost.body}</div>
+        </div>
+        <div>
+          <PostComment parentId={this.props.aPost._id} liftNewComment={this.handleNewComment} />
+        </div>
+        <div>
+          <Comments postComments={this.state.comments} />
+        </div>
+       </div>
+      )
+    }
+    return null;
+  }
+}
+
 class Main extends Component {
   constructor() {
     super();
     this.state = {
-      posts: null
+      posts: null,
+      post:null
     }
     this.handleNewPost = this.handleNewPost.bind(this);
+    this.handleGetPost = this.handleGetPost.bind(this);
   }
 
   componentDidMount() {
@@ -381,15 +497,24 @@ class Main extends Component {
     })
   }
 
+  handleGetPost(aPost) {
+    this.setState(
+      {
+        post:aPost
+      }
+    )
+  }
+
   render() {
     return (
       <div>
         <div>
           <div>
-            {(this.props.isLoggedIn)?<Postbox funcNewPost={this.handleNewPost}/>:null}
+            {(this.props.isLoggedIn)?<CreatePostbox funcNewPost={this.handleNewPost}/>:null}
           </div>
           <div>
-            <Posts posts={this.state.posts} />
+            <Posts posts={this.state.posts} getPostHandler={this.handleGetPost} />
+            <Post aPost={this.state.post} />
           </div>
         </div>
       </div>
