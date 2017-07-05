@@ -9,7 +9,6 @@ class Postauthor extends Component {
       authorId: this.props.authorId
     }
     this.handleClick = this.handleClick.bind(this);
-
   }
 
   handleClick(e) {
@@ -23,34 +22,17 @@ class Postauthor extends Component {
   }
 }
 
-class Postsubject extends Component {
+class PostSubject extends Component {
   constructor(props) {
     super(props);
     this.state = {
       postId: this.props.postId
     }
     this.handleClick = this.handleClick.bind(this);
-
   }
 
   handleClick(e) {
-    console.log(this.state.postId);
-    fetch('http://23.239.1.81:2999/getpost?postid='+this.state.postId, {
-      credentials: 'include',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      method: 'GET',
-    })
-    .then((res) => { return res.json() })
-    .then((data) => {
-      this.props.getPostHandler(data)
-    })
-    .catch((err) => {
-      console.log(err);
-    });
-    
+    this.props.funcSetPostId(this.state.postId);
   }
 
   render() {
@@ -89,7 +71,7 @@ class PostItems extends Component {
                   <tr key={item._id}>
                     <td className="post_author"><Postauthor authorId={item.author_id} authorName={item.author_name} /></td>
                     <td>{item.ts}</td>
-                    <td className="post_subject"><Postsubject postId={item._id} postSubject={item.subj} getPostHandler={this.props.getPostHandler} /></td>
+                    <td className="post_subject"><PostSubject postId={item._id} postSubject={item.subj} funcSetPostId={this.props.funcSetPostId} /></td>
                   </tr>
                 )
               })}
@@ -110,7 +92,7 @@ class Posts extends Component {
           <h2>Latest Posts</h2>
         </div>
         <div>
-          <PostItems posts={this.props.posts} getPostHandler={this.props.getPostHandler} />
+          <PostItems posts={this.props.posts} funcSetPostId={this.props.funcSetPostId} />
         </div>
       </div>
     );
@@ -346,6 +328,7 @@ class PostComment extends Component {
       saving: false
     }
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleChange = this.handleChange.bind(this);
   }
 
   handleSubmit(e) {
@@ -356,7 +339,7 @@ class PostComment extends Component {
       })
       let newPost = {
         subj: 'Comment in reply to:',
-        post: this.state.postMsg,
+        post: this.state.comment,
         parent_id: this.props.parentId
       }
       fetch('http://23.239.1.81:2999/savepost', {
@@ -400,7 +383,7 @@ class PostComment extends Component {
           <textarea onChange={this.handleChange} value={this.state.comment}></textarea>
         </div>
         <div>
-          <input type="submit" value="Comment" />
+        {this.state.saving?<input type="submit" value="Comment" disabled />:<input type="submit" value="Comment" />}
         </div>
       </form>
     )
@@ -408,13 +391,57 @@ class PostComment extends Component {
 }
 
 class Comments extends Component {
+  constructor() {
+    super();
+    this.state = {
+      comments: []
+    }
+    this.fetchComments = this.fetchComments.bind(this);
+  }
+
+  fetchComments(postId) {
+    if (postId) {
+      fetch('http://23.239.1.81:2999/getcomments?postid=' + postId, 
+        {
+          method: 'GET',
+        }
+      )
+      .then((result) => { return result.json() })
+      .then((resultJson) => {
+        this.setState({
+          comments: resultJson
+        })
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+    }
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.postId !== this.props.postId) {
+      this.fetchComments(nextProps.postId);
+    }
+    if (nextProps.newComment && (this.props.newComment === null || (nextProps.newComment._id !== this.props.newComment._id))) {
+      let comments = this.state.comments;
+      comments.push(nextProps.newComment);
+      this.setState({
+        comments: comments
+      })
+    }
+  }
+
+  componentDidMount() {
+    this.fetchComments(this.props.postId);
+  }
+
   render() {
-    if (this.props.postComments.length > 0) {
+    if (this.state.comments.length > 0) {
       return (
         <div>
-          {this.props.postComments.map((comment) => {
+          {this.state.comments.map((comment) => {
             return (
-              <div>{comment}</div>
+              <div key={comment._id + "_comment"}>{comment.body}</div>
             )
           })}
         </div>
@@ -428,30 +455,66 @@ class Post extends Component {
   constructor() {
     super();
     this.state = {
-      comments: []
+      post:null,
+      newComment: null
     }
     this.handleNewComment = this.handleNewComment.bind(this);
+    this.handleFetchPost = this.handleFetchPost.bind(this);
   }
 
   handleNewComment(comment) {
-    this.setState({comments: this.state.comments.push(comment)})
+    console.log('handlenewcomment:'+ comment);
+    this.setState({
+        newComment: comment
+    })
+  }
+
+  handleFetchPost(postId) {
+    if (postId) {
+      fetch('http://23.239.1.81:2999/getpost?postid='+postId,
+        {
+          method: 'GET'
+        }
+      )
+      .then((result) => { return result.json() })
+      .then((resultJson) => {
+        this.setState({
+          post: resultJson
+        })
+      })
+      .catch((err) => {
+        console.log(err)
+      });
+    }
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.postId !== this.props.postId) {
+      this.handleFetchPost(nextProps.postId);
+    }
+  }
+
+  componentDidMount() {
+    this.handleFetchPost(this.props.postId);
   }
 
   render() {
-    if (this.props.aPost) {
+    if (this.state.post) {
       return(
        <div>
         <div>
-          <div>{this.props.aPost.author_name}</div>
-          <div>{this.props.aPost.ts}</div>
-          <div>{this.props.aPost.subj}</div>
-          <div>{this.props.aPost.body}</div>
+          <div>{this.state.post.author_name}</div>
+          <div>{this.state.post.ts}</div>
+          <div>{this.state.post.subj}</div>
+          <div>{this.state.post.body}</div>
         </div>
+        {(this.props.isLoggedIn)?(
         <div>
-          <PostComment parentId={this.props.aPost._id} liftNewComment={this.handleNewComment} />
+          <PostComment parentId={this.state.post._id} liftNewComment={this.handleNewComment} />
         </div>
+        ):null}
         <div>
-          <Comments postComments={this.state.comments} />
+          <Comments postId={this.state.post._id} newComment={this.state.newComment} />
         </div>
        </div>
       )
@@ -464,11 +527,10 @@ class Main extends Component {
   constructor() {
     super();
     this.state = {
-      posts: null,
-      post:null
+      chosenPostId: null
     }
     this.handleNewPost = this.handleNewPost.bind(this);
-    this.handleGetPost = this.handleGetPost.bind(this);
+    this.handleSetPostId = this.handleSetPostId.bind(this);
   }
 
   componentDidMount() {
@@ -486,6 +548,7 @@ class Main extends Component {
     })
     .catch((err) => {
       console.log(err);
+
     });
   }
 
@@ -497,12 +560,10 @@ class Main extends Component {
     })
   }
 
-  handleGetPost(aPost) {
-    this.setState(
-      {
-        post:aPost
-      }
-    )
+  handleSetPostId(postId) {
+    this.setState({
+        chosenPostId: postId
+    })
   }
 
   render() {
@@ -510,11 +571,11 @@ class Main extends Component {
       <div>
         <div>
           <div>
-            {(this.props.isLoggedIn)?<CreatePostbox funcNewPost={this.handleNewPost}/>:null}
+            {(this.props.isLoggedIn)?<CreatePostbox funcNewPost={this.handleNewPost} />:null}
           </div>
           <div>
-            <Posts posts={this.state.posts} getPostHandler={this.handleGetPost} />
-            <Post aPost={this.state.post} />
+            <Posts funcSetPostId={this.handleSetPostId} posts={this.state.posts} />
+            {this.state.chosenPostId?<Post postId={this.state.chosenPostId} isLoggedIn={this.props.isLoggedIn} />:null}
           </div>
         </div>
       </div>
