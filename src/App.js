@@ -1,8 +1,11 @@
 import React, { Component } from 'react';
+import * as RB from 'react-bootstrap';
 import logo from './logo.svg';
 import './App.css';
+import './bubble.css';
+import AvatarEditor from 'react-avatar-editor';
 
-class Postauthor extends Component {
+class PostAuthor extends Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -17,7 +20,7 @@ class Postauthor extends Component {
 
   render() {
     return(
-      <span onClick={this.handleClick}>{this.props.authorName}</span>
+      <span className="postAuthor" onClick={this.handleClick}>{this.props.authorName}</span>
     )
   }
 }
@@ -37,7 +40,7 @@ class PostSubject extends Component {
 
   render() {
     return(
-      <span onClick={this.handleClick}>{this.props.postSubject}</span>
+      <p onClick={this.handleClick}>{this.props.postSubject}</p>
     )
   }
 }
@@ -59,26 +62,53 @@ class PostItems extends Component {
 
   render() {
     if (this.props && this.props.posts) {
-      return(
-        <div>
-          <table>
-            <thead>
-              <tr><th>Who</th><th>When</th><th>What</th></tr>
-            </thead>
-            <tbody>
-              {this.props.posts.map((item, idx) => {
-                return(
-                  <tr key={item._id}>
-                    <td className="post_author"><Postauthor authorId={item.author_id} authorName={item.author_name} /></td>
-                    <td>{item.ts}</td>
-                    <td className="post_subject"><PostSubject postId={item._id} postSubject={item.subj} funcSetPostId={this.props.funcSetPostId} /></td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      )
+      if (this.props.chatStyle) {
+        return (
+          <div>
+            {this.props.posts.map((item, idx) => {
+              return (
+                <RB.Row key={item._id}>
+                  <RB.Col md={2}>
+                    <div className="postAuthor">
+                      <PostAuthor authorId={item.authord_id} authorName={item.author_name} /> said:
+                    </div>
+                  </RB.Col>
+                  <RB.Col md={4}>
+                    <div className="bubble postSubject">
+                      <PostSubject postId={item._id} postSubject={item.subj} funcSetPostId={this.props.funcSetPostId} />
+                    </div>
+                  </RB.Col>
+                </RB.Row>
+              )
+            })}
+          </div>
+        )
+      } else {
+        return (
+          <div>
+            <table>
+              <thead>
+                <tr><th>Who</th><th>When</th><th>What</th></tr>
+              </thead>
+              <tbody>
+                {this.props.posts.map((item, idx) => {
+                  return(
+                    <tr key={item._id}>
+                      <td className="post_author">
+                        <PostAuthor authorId={item.author_id} authorName={item.author_name} />
+                      </td>
+                      <td>{item.ts}</td>
+                      <td className="post_subject">
+                        <PostSubject postId={item._id} postSubject={item.subj} funcSetPostId={this.props.funcSetPostId} />
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )
+      }
     }
     return <div>Loading...</div>
   }
@@ -88,12 +118,7 @@ class Posts extends Component {
   render() {
     return (
       <div>
-        <div>
-          <h2>Latest Posts</h2>
-        </div>
-        <div>
-          <PostItems posts={this.props.posts} funcSetPostId={this.props.funcSetPostId} />
-        </div>
+        <PostItems chatStyle={true} posts={this.props.posts} funcSetPostId={this.props.funcSetPostId} />
       </div>
     );
   }
@@ -236,7 +261,7 @@ class Login extends Component {
       .then((res) => { return res.json() })
       .then((data) => {
         if (data.err_msg === 'OK') {
-          this.props.doLogin();
+          this.props.doLogin(data.data);
         }
       })
       .catch((err) => {
@@ -249,20 +274,22 @@ class Login extends Component {
     return (
       <div>
         <div>
-          <h2>Welcome Guest!</h2>
-        </div>
-        <div>
-          <form onSubmit={this.handleSubmit}>
-            <label>
-              Username
-              <input type="text" value={this.state.uname} onChange={this.handleUserNameChange} />
-            </label>
-            <label>
-              Password
-              <input type="password" value={this.state.pwd} onChange={this.handlePasswordChange} />
-            </label>
-            <input type="submit" value="Login" />
-          </form>
+          <RB.Form inline onSubmit={this.handleSubmit}>
+            <RB.FormGroup controlId="formInLineName">
+              <RB.ControlLabel>Username</RB.ControlLabel>
+              {' '}
+              <RB.FormControl bsSize="sm" type="text" value={this.state.uname} onChange={this.handleUserNameChange} />
+            </RB.FormGroup>
+            {' '}
+            <RB.FormGroup>
+              {' '}
+              <RB.ControlLabel>Password</RB.ControlLabel>
+              {' '}
+              <RB.FormControl bsSize="sm" type="password" value={this.state.pwd} onChange={this.handlePasswordChange} />
+            </RB.FormGroup>
+            {' '}
+            <RB.Button type="submit">Login</RB.Button>
+          </RB.Form>
         </div>
       </div>
     )
@@ -291,10 +318,9 @@ class Logout extends Component {
     return(
       <div>
         <div>
-          <h2>Welcome back!</h2>
         </div>
         <div>
-          <button onClick={this.handleLogout}>Logout</button>
+          <span className="uname">{this.props.user.uname}</span>{' ' }<RB.Button onClick={this.handleLogout}>Logout</RB.Button>
         </div>
       </div>
     )
@@ -302,19 +328,18 @@ class Logout extends Component {
 }
 
 class Greeting extends Component {
-
   render() {
     if (this.props.isLoggedIn) {
       return (
-        <div>
-          <Logout doLogout={this.props.funcLogout} />
-        </div>
+        <RB.Navbar.Form pullRight>
+          <Logout user={this.props.user} doLogout={this.props.funcLogout} />
+        </RB.Navbar.Form>
       )
     } else {
       return (
-        <div>
+        <RB.Navbar.Form pullRight>
           <Login doLogin={this.props.funcLogin} />
-        </div>
+        </RB.Navbar.Form>
       )
     }
   }
@@ -505,8 +530,8 @@ class Post extends Component {
         <div>
           <div>{this.state.post.author_name}</div>
           <div>{this.state.post.ts}</div>
-          <div>{this.state.post.subj}</div>
-          <div>{this.state.post.body}</div>
+          <div className="postSubject">{this.state.post.subj}</div>
+          <div className="postBody">{this.state.post.body}</div>
         </div>
         {(this.props.isLoggedIn)?(
         <div>
@@ -520,6 +545,227 @@ class Post extends Component {
       )
     }
     return null;
+  }
+}
+
+class ProfilePic extends Component {
+  constructor(props) {
+    super(props);
+    let previewPic=this.props.profilePic?this.props.profilePic:'images/avatars/default.png';
+    previewPic = 'http://23.239.1.81:2999/'+previewPic;
+    let profilePic=this.props.profilePic?this.props.profilePic:'images/avatars/default.png';
+    profilePic = 'http://23.239.1.81:2999/'+profilePic;
+    this.state = {
+      url: profilePic,
+      file: '',
+      tmpfile: '',
+      newPicUrl: previewPic,
+      editing: false,
+      scale: 1,
+      borderRadius: 100,
+      height: 200,
+      width: 200
+    }
+    this.handleNewPic = this.handleNewPic.bind(this);
+    this.handleChange = this.handleChange.bind(this);
+    this.handleCrop = this.handleCrop.bind(this);
+    this.handleScaleChange = this.handleScaleChange.bind(this);
+    this.handleSave = this.handleSave.bind(this);
+  }
+
+  handleNewPic(e) {
+    if (this.state.editing) {
+      this.setState({
+        editing: false,
+        scale: 1.0,
+        newPicUrl: this.state.url
+      })
+    } else {
+      this.setState({
+        editing: true
+      })
+      this.inputElement.click();
+    }
+  }
+
+  handleSave(e) {
+    if (this.editor.getImage()) {
+      let data = new FormData();
+      data.append('raw', this.editor.getImage().toDataURL());
+      data.append('name', 'profile');
+      if (this.state.tmpFile) {
+        data.append('tmp_file', this.state.tmpFile);
+      }
+      fetch('http://23.239.1.81:2999/profile/save',
+        {
+          method: 'POST',
+          body: data,
+          credentials: 'include'
+        }
+      )
+      .then((result) => { return result.json() })
+      .then((resultJson) => {
+        if (resultJson.status === 'OK') {
+          this.setState({
+            url: 'http://23.239.1.81:2999/'+resultJson.filename,
+            tmpfile: '',
+            editing:false,
+            scale: 1.0,
+            newPicUrl: 'http://23.239.1.81:2999/'+resultJson.filename
+          })
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+    }
+  }
+
+  handleChange(e) {
+    if (e.target.value) {
+      let data = new FormData();
+      let files = this.inputElement.files;
+
+      data.append('file', files[0]);
+      fetch('http://23.239.1.81:2999/profile/upload',
+        {
+          method: 'POST',
+          body: data,
+          credentials: 'include'
+        }
+      )
+      .then((result) => { return result.json() })
+      .then((resultJson) => {
+        this.setState({
+          url: 'http://23.239.1.81:2999/'+resultJson.filename,
+          tmpfile: resultJson.filename
+        })
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+    }
+  }
+
+  componentDidMount() {
+    if (!this.state.url) {
+      this.setState({
+        url: 'http://23.239.1.81:2999/images/avatars/default.png'
+      })
+    }
+  }
+
+  handleCrop() {
+    this.setState({
+      newPicUrl: this.editor.getImage().toDataURL()
+    })
+  }
+
+  handleScaleChange(e) {
+    this.setState({
+      scale: parseFloat(e.target.value),
+      newPicUrl: this.editor.getImage().toDataURL()
+    })
+  }
+
+  setEditorRef = (editor) => this.editor = editor;
+
+  render() {
+    let previewStyle = {
+      borderRadius: this.state.borderRadius,
+      borderWidth: 1,
+      padding: 5,
+      borderStyle: 'solid',
+      width:this.state.width,
+      height:this.state.height,
+      borderColor: '#d3d3d3'
+    }
+    return(
+      <RB.Grid>
+        <RB.Col md={3}>
+        {this.state.editing &&
+          <div>
+            <div>
+              <AvatarEditor width={200} height={200} scale={this.state.scale} borderRadius={this.state.borderRadius} ref={this.setEditorRef} image={this.state.url} onPositionChange={this.handleCrop} />
+            </div>
+            <div style={{textAlign:'center'}}>
+              <label>
+                Zoom{' '}
+                <input type="range" min="1" max="20" value={this.state.scale} step="0.2" onChange={this.handleScaleChange} />
+              </label>
+            </div>
+          </div>
+        }
+        {!this.state.editing &&
+          <div style={{textAlign:'center'}}>
+            <img src={this.state.url} style={previewStyle} alt="profile_pic" />
+          </div>
+        }
+          <div style={{textAlign: 'center'}}>
+            <span onClick={this.handleNewPic}>Update Profile Pic</span>
+            {this.state.editing && <span>  <RB.Button onClick={this.handleNewPic}>Cancel</RB.Button></span>}
+          </div>
+            <input ref={input => this.inputElement = input} className="hiddenFileDialog" type="file" onChange={this.handleChange} value={this.state.file} />
+        </RB.Col>
+        <RB.Col md={3}>
+          {this.state.editing &&
+            <div style={{textAlign:'center'}}>
+              <div>
+                <img src={this.state.newPicUrl} style={previewStyle} alt="preview" />
+              </div>
+              <div style={{marginTop:10}}>
+                <RB.Button onClick={this.handleSave}>Save</RB.Button>
+              </div>
+            </div>
+          }
+        </RB.Col>
+      </RB.Grid>
+    )
+  }
+
+
+}
+
+class Profile extends Component {
+  constructor() {
+    super();
+    this.state = {
+      user: null
+    }
+  }
+
+  componentWillMount() {
+    fetch('http://23.239.1.81:2999/getuser?uid='+this.props.user.id, {
+      method: 'GET'
+    })
+    .then((response) => { return response.json() })
+    .then((responseJson) => {
+      this.setState({
+        user: responseJson
+      })
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+  }
+
+  render() {
+    return (
+      <div>
+      {this.state.user &&
+        <div>
+          <div>
+            <ProfilePic profilePic={this.state.user.profileURL} />
+          </div>
+          <div>
+            {this.state.user.uname}
+          </div>
+          <div>
+          </div>
+        </div>
+      }
+      </div>
+    )
   }
 }
 
@@ -548,7 +794,6 @@ class Main extends Component {
     })
     .catch((err) => {
       console.log(err);
-
     });
   }
 
@@ -562,24 +807,51 @@ class Main extends Component {
 
   handleSetPostId(postId) {
     this.setState({
-        chosenPostId: postId
+        chosenPostId: postId,
+        viewState: 'post'
     })
   }
 
   render() {
     return (
       <div>
-        <div>
+        {!this.state.chosenPostId && this.props.viewState === 'posts' &&
           <div>
-            {(this.props.isLoggedIn)?<CreatePostbox funcNewPost={this.handleNewPost} />:null}
+            <div>
+              {(this.props.isLoggedIn)?<CreatePostbox funcNewPost={this.handleNewPost} />:null}
+            </div>
+            <div>
+              <Posts funcSetPostId={this.handleSetPostId} posts={this.state.posts} />
+            </div>
           </div>
-          <div>
-            <Posts funcSetPostId={this.handleSetPostId} posts={this.state.posts} />
-            {this.state.chosenPostId?<Post postId={this.state.chosenPostId} isLoggedIn={this.props.isLoggedIn} />:null}
-          </div>
-        </div>
+        } 
+        {this.state.chosenPostId && this.props.viewState === 'posts' &&
+          <Post postId={this.state.chosenPostId} isLoggedIn={this.props.isLoggedIn} />
+        }
+        {this.props.viewState === 'profile' &&
+          <Profile isLoggedIn={this.props.isLoggedIn} user={this.props.user} />
+        }.
       </div>
     )    
+  }
+}
+
+class LeftSideBar extends Component {
+  constructor() {
+    super();
+    this.handleUnameClick = this.handleUnameClick.bind(this);
+  }
+
+  handleUnameClick() {
+    this.props.handleSideBarClick('profile');
+  }
+
+  render() {
+    return (
+      <div>
+        {this.props.isLoggedIn?<div onClick={this.handleUnameClick} className="uname">{this.props.uname}</div>:<div></div>}
+      </div>
+    )
   }
 }
 
@@ -588,13 +860,15 @@ class App extends Component {
     super();
     this.state = {
       isLoggedIn:false,
-      user: {}
+      user: {},
+      viewState: 'posts'
     }
     this.handleLogout = this.handleLogout.bind(this);
     this.handleLogin = this.handleLogin.bind(this);
+    this.handleSideBarClick = this.handleSideBarClick.bind(this);
   }
 
-  componentDidMount() {
+  componentWillMount() {
     fetch('http://23.239.1.81:2999/checksession', {
       method: 'GET',
       credentials: 'include'
@@ -605,7 +879,8 @@ class App extends Component {
     .then((responseJson) => {
         if (responseJson.ok === 1) {
           this.setState({
-            isLoggedIn: true
+            isLoggedIn: true,
+            user: responseJson.user
           });
         } else {
           this.setState({
@@ -624,22 +899,36 @@ class App extends Component {
     });
   }
 
-  handleLogin() {
+  handleLogin(user) {
     this.setState({
-      isLoggedIn: true
+      isLoggedIn: true,
+      user: user
+    });
+  }
+
+  handleSideBarClick(what) {
+    this.setState({
+      viewState: what
     });
   }
 
   render() {
     return (
       <div className="App">
-        <div className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <Greeting isLoggedIn={this.state.isLoggedIn} funcLogout={this.handleLogout} funcLogin={this.handleLogin} />
-        </div>
-        <div>
-          <Main isLoggedIn={this.state.isLoggedIn} />
-        </div>
+        <RB.Navbar>
+          <RB.Navbar.Header>
+            <img src={logo} className="App-logo" alt="logo" />
+            Nanny Review
+          </RB.Navbar.Header>
+            <Greeting user={this.state.user} isLoggedIn={this.state.isLoggedIn} funcLogout={this.handleLogout} funcLogin={this.handleLogin} />
+        </RB.Navbar>
+        <RB.Col md={2}></RB.Col>
+        <RB.Col md={2}>
+          <LeftSideBar handleSideBarClick={this.handleSideBarClick} uname={this.state.user.uname} isLoggedIn={this.state.isLoggedIn} />
+        </RB.Col>
+        <RB.Col md={5}><Main viewState={this.state.viewState} isLoggedIn={this.state.isLoggedIn} user={this.state.user} /></RB.Col>
+        <RB.Col md={1}></RB.Col>
+        <RB.Col md={2}></RB.Col>
       </div>
     );
   }

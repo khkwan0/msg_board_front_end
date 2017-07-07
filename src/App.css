@@ -1,5 +1,4 @@
 .App {
-  text-align: center;
 }
 
 .App-logo {
@@ -9,13 +8,39 @@
 
 .App-header {
   background-color: #222;
-  height: 150px;
   padding: 20px;
   color: white;
 }
 
 .App-intro {
   font-size: large;
+}
+
+.Greeting {
+  text-align: right;
+}
+
+.uname {
+  font-weight:bolder;
+}
+
+.postAuthor {
+  font-weight:bold;
+}
+
+.postSubject {
+  margin-bottom: 20px;
+}
+
+.hiddenFileDialog {
+  visibility: hidden;
+}
+
+.profilePic {
+}
+
+.profilePicPreview {
+  width:200px;
 }
 
 @keyframes App-logo-spin {
