@@ -194,7 +194,7 @@ class Profile extends Component {
     }
     this.state = {
       user: this.props.user,
-      self: false
+      self: self
     }
   }
 

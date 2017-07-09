@@ -212,7 +212,7 @@ class App extends Component {
   render() {
     return (
       <div className="App">
-        <RB.Navbar>
+        <RB.Navbar fixedTop={true}>
           <RB.Navbar.Header>
             <Link to="/"><img onClick={this.handleLogoClick} src={logo} className="App-logo" alt="logo" /></Link>
             <span onClick={this.handleLogoClick} className="logoText">Nanny Review</span>
@@ -224,7 +224,7 @@ class App extends Component {
           <LeftSideBar user={this.state.user} isLoggedIn={this.state.isLoggedIn} />
         </RB.Col>
         <RB.Col md={5}>
-          <div>
+          <div className="panel">
             <Route exact={true} path="/" render={()=><Main isLoggedIn={this.state.isLoggedIn} user={this.state.user} />} />
             <Route exact={true} path="/profile" render={()=><Profile isLoggedIn={this.state.isLoggedIn} user={this.state.user} />} />
             <Route exact={true} path="/profile/:user" render={(props)=><Profile match={props} isLoggedIn={this.state.isLoggedIn} user={this.state.user} />} />
