@@ -1,7 +1,7 @@
 .bubble 
 {
 position: relative;
-width: 250px;
+width: auto;
 height: auto;
 padding: 7px;
 background: #D8B5AA;

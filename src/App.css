@@ -24,6 +24,10 @@
   font-weight:bolder;
 }
 
+.postTime {
+  font-size:0.8em;
+}
+
 .postAuthor {
   font-weight:bold;
 }
@@ -43,6 +47,9 @@
   width:200px;
 }
 
+.logoText {
+  font-weight:bold;
+}
 @keyframes App-logo-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
