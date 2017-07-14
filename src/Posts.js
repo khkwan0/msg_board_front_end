@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 import * as RB from 'react-bootstrap';
 import { Link } from 'react-router-dom';
-import './App.css';
+import './Posts.css';
 import './bubble.css';
+import Config from './config.js';
 
 class CreatePostbox extends Component {
   constructor() {
@@ -147,17 +148,20 @@ class PostItems extends Component {
         return (
           <div>
             {this.props.posts.map((item, idx) => {
+              if (!item.author_avatar) {
+                item.author_avatar = Config.default.avatarURL; 
+              }
               return (
-                <RB.Row key={item._id}>
-                  <RB.Col md={3}>
-                    <div className="postTime">
-                      <span>On </span><span>{item.ts}</span>
-                    </div>
+                <RB.Row style={{paddingBottom:30}} key={item._id}>
+                  <RB.Col sm={4}>
                     <div className="postAuthorContainer">
-                      <span className="postAuthor"><PostAuthor authorId={item.author_id} authorName={item.author_name} /></span>{' '}<span>said:</span>
+                      <span><img className="postIcon" src={`${Config.default.host}${item.author_avatar}`} alt="user avatar"/></span><span className="postAuthor"><PostAuthor authorId={item.author_id} authorName={item.author_name} /></span>
+                    <div className="postTime">
+                      <span>{item.ts}</span>
+                    </div>
                     </div>
                   </RB.Col>
-                  <RB.Col md={5}>
+                  <RB.Col sm={8}>
                     <div className="bubble postSubject">
                       <PostSubject postId={item._id} postSubject={item.subj} funcSetPostId={this.props.funcSetPostId} />
                     </div>

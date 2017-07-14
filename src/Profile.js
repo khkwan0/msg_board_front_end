@@ -2,13 +2,17 @@ import React, { Component } from 'react';
 import * as RB from 'react-bootstrap';
 import AvatarEditor from 'react-avatar-editor';
 import './App.css';
+import Config from './config.js';
 
 class ProfilePic extends Component {
   constructor(props) {
     super(props);
-    let previewPic=this.props.profilePicURL?this.props.profilePicURL:'images/avatars/default.png';
+    this.props = props;
+    console.log(this.props.target);
+    console.log(this.props.editable);
+    let previewPic=this.props.target.profilePicURL?this.props.target.profilePicURL:'images/avatars/default.png';
     previewPic = 'http://23.239.1.81:2999/'+previewPic;
-    let profilePic=this.props.profilePicURL?this.props.profilePicURL:'images/avatars/default.png';
+    let profilePic=this.props.target.profilePicURL?this.props.target.profilePicURL:'images/avatars/default.png';
     profilePic = 'http://23.239.1.81:2999/'+profilePic;
     this.state = {
       profilePicURL: profilePic,
@@ -152,7 +156,7 @@ class ProfilePic extends Component {
           </div>
         }
           <div style={{textAlign: 'center'}}>
-          {!this.state.editing && <span onClick={this.handleNewPic}>Update Profile Pic</span>}
+          {!this.state.editing && this.props.editable && <span onClick={this.handleNewPic}>Update Profile Pic</span>}
             {this.state.editing && <span><RB.Button onClick={this.handleNewPic}>Cancel</RB.Button></span>}
           </div>
             <input ref={input => this.inputElement = input} className="hiddenFileDialog" type="file" onChange={this.handleChange} value={this.state.file} />
@@ -178,41 +182,88 @@ class Profile extends Component {
   constructor(props) {
     super(props);
     this.props = props;
+    console.log('constructor');
     console.log(this.props);
-
-    let target = null;
-    try {
-      target = this.props.match.match.params.user;
-    } catch(e) {
-    }
-    let self = true;
-    try {
-      if (this.props.user.id !== target.id)  {
-        self = false
-      }
-    } catch(e) {
-    }
     this.state = {
-      user: this.props.user,
-      self: self
+      isLoggedIn: false,
+      user: null,
+      editable: false,
+      targetUser:null 
     }
+    this.getUser = this.getUser.bind(this);
+    this.getProfile = this.getProfile.bind(this);
+    this.getProfile(this.props);
+  }
+
+  getUser(target, editable) {
+    if (target) {
+      console.log(target);
+      fetch(Config.default.host+'getuser?uid='+target,
+        {
+          method: 'GET',
+        }
+      )
+      .then((result) => { return result.json() })
+      .then((resultJson) => {
+        this.setState({
+          targetUser: resultJson,
+          editable: editable
+        })
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+    }
+  }
+
+  getProfile(props) {
+    console.log('getprofile');
+    console.log(props);
+    let target = null;
+    if (props.isLoggedIn && typeof props.match === 'undefined') {
+      target = props.user.id;
+      this.getUser(target, true);
+    } else if (props.isLoggedIn && props.match.match.params.user) {
+      let editable = false;
+      target = props.match.match.params.user;
+      if (target === props.user.id) {
+        editable = true;
+      }
+      this.getUser(target, editable);
+    } else if (!props.isLoggedIn && typeof props.match !== 'undefined') {
+      console.log(props.match);
+      target = props.match.match.params.user;
+      this.getUser(target, false); 
+    } else {
+      console.log('wuoe');
+      /*
+      this.setState({
+        targetUser: null,
+        editable: false,
+        isLoggedIn:false,
+        user: null
+      })
+      */
+    }
+  }
+  componentWillReceiveProps(nextProps) {
+    console.log('willreceive');
+    this.getProfile(nextProps);
   }
 
   render() {
     return (
       <div>
-      {this.state.user &&
         <div>
           <div>
-            <ProfilePic editable={this.self} profilePicURL={this.state.user.profilePicURL} />
+            {this.state.targetUser?<ProfilePic editable={this.state.editable} target={this.state.targetUser} />:null}
           </div>
           <div>
-            {this.state.user.uname}
+            {this.state.targetUser?<span>{this.state.targetUser.uname}</span>:null}
           </div>
           <div>
           </div>
         </div>
-      }
       </div>
     )
   }

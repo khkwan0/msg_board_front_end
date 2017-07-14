@@ -24,18 +24,6 @@
   font-weight:bolder;
 }
 
-.postTime {
-  font-size:0.8em;
-}
-
-.postAuthor {
-  font-weight:bold;
-}
-
-.postSubject {
-  margin-bottom: 20px;
-}
-
 .hiddenFileDialog {
   visibility: hidden;
 }

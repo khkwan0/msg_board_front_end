@@ -4,11 +4,11 @@ import Profile from './Profile';
 import Posts from './Posts';
 import Post from './Post';
 import LeftSideBar from './LeftSideBar';
+import Register from './Register';
 import * as RB from 'react-bootstrap';
 import logo from './logo.svg';
 import './App.css';
 import './bubble.css';
-
 
 class Login extends Component {
   constructor() {
@@ -81,6 +81,7 @@ class Login extends Component {
           </RB.FormGroup>
           {' '}
           <RB.Button type="submit">Login</RB.Button>
+          <Link to="/register">Register</Link>
         </RB.Form>
       </div>
     )
@@ -223,12 +224,13 @@ class App extends Component {
         <RB.Col md={2}>
           <LeftSideBar user={this.state.user} isLoggedIn={this.state.isLoggedIn} />
         </RB.Col>
-        <RB.Col md={5}>
+        <RB.Col md={5} style={{backgroundColor:'red'}}>
           <div className="panel">
             <Route exact={true} path="/" render={()=><Main isLoggedIn={this.state.isLoggedIn} user={this.state.user} />} />
             <Route exact={true} path="/profile" render={()=><Profile isLoggedIn={this.state.isLoggedIn} user={this.state.user} />} />
             <Route exact={true} path="/profile/:user" render={(props)=><Profile match={props} isLoggedIn={this.state.isLoggedIn} user={this.state.user} />} />
             <Route path="/post/:postid" render={(props)=><Post match={props} isLoggedIn={this.state.isLoggedIn} user={this.state.user} />} />
+            <Route exact={true} path="/register" component={Register} />
           </div>
         </RB.Col>
         <RB.Col md={1}></RB.Col>

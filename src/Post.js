@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import Config from './config';
 
 class PostComment extends Component {
   constructor() {
@@ -142,11 +143,52 @@ class Post extends Component {
     this.state = {
       post:null,
       newComment: null,
-      postId: postId
+      postId: postId,
+      posture: null
     }
     this.handleNewComment = this.handleNewComment.bind(this);
     this.handleFetchPost = this.handleFetchPost.bind(this);
+    this.handleLike = this.handleLike.bind(this);
+    this.handleDislike = this.handleDislike.bind(this);
+    this.updatePostPosture = this.updatePostPosture.bind(this);
     this.handleFetchPost(postId);
+  }
+
+  updatePostPosture(posture) {
+    if (this.state.postId) {
+      fetch(Config.default.host+'saveposture',
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ post_id: this.state.postId, posture: posture})
+        }
+      )
+      .then((result) => { return result.json() })
+      .then((resultJson) => {
+        console.log(resultJson)
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+    }
+  }
+
+  handleDislike() {
+    this.setState({
+      posture: 'dislike'
+    })
+    this.updatePostPosture('dislike')
+  }
+
+  handleLike() {
+    this.setState({
+      posture: 'like'
+    })
+    this.updatePostPosture('like')
   }
 
   handleNewComment(comment) {
@@ -197,7 +239,12 @@ class Post extends Component {
         </div>
         {(this.props.isLoggedIn)?(
         <div>
-          <PostComment parentId={this.state.post._id} liftNewComment={this.handleNewComment} />
+          <div>
+            <span onClick={this.handleLike}>Like</span><span onClick={this.handleDislike}>Dislike</span>
+          </div>
+          <div>
+            <PostComment parentId={this.state.post._id} liftNewComment={this.handleNewComment} />
+          </div>
         </div>
         ):null}
         <div>

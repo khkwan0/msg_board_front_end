@@ -1,0 +1,22 @@
+.postTime {
+  font-size:0.8em;
+}
+
+.postAuthor {
+  font-weight:bold;
+}
+
+.postSubject {
+  margin-bottom: 20px;
+  font-size:1.5em;
+}
+
+.postIcon {
+  border-radius:100px;
+  padding: 5px;
+  width:50px;
+}
+
+.postAuthorContainer {
+  text-align:right;
+}

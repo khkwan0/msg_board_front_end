@@ -22,7 +22,7 @@ display: block;
 width: 0;
 z-index: 1;
 left: -19px;
-top: 9px;
+top: 15px;
 }
 
 .bubble:before 
@@ -36,5 +36,5 @@ display: block;
 width: 0;
 z-index: 0;
 left: -26px;
-top: 6px;
+top: 12px;
 }
