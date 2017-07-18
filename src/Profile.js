@@ -8,8 +8,6 @@ class ProfilePic extends Component {
   constructor(props) {
     super(props);
     this.props = props;
-    console.log(this.props.target);
-    console.log(this.props.editable);
     let previewPic=this.props.target.profilePicURL?this.props.target.profilePicURL:'images/avatars/default.png';
     previewPic = 'http://23.239.1.81:2999/'+previewPic;
     let profilePic=this.props.target.profilePicURL?this.props.target.profilePicURL:'images/avatars/default.png';
@@ -182,32 +180,36 @@ class Profile extends Component {
   constructor(props) {
     super(props);
     this.props = props;
-    console.log('constructor');
-    console.log(this.props);
     this.state = {
       isLoggedIn: false,
       user: null,
       editable: false,
-      targetUser:null 
+      targetUser:null,
+      followed:null
     }
     this.getUser = this.getUser.bind(this);
     this.getProfile = this.getProfile.bind(this);
+    this.follow = this.follow.bind(this);
+    this.unfollow = this.unfollow.bind(this);
+    this.doFollowUnfollow = this.doFollowUnfollow.bind(this);
     this.getProfile(this.props);
   }
 
-  getUser(target, editable) {
+  getUser(target, editable, props) {
     if (target) {
-      console.log(target);
       fetch(Config.default.host+'getuser?uid='+target,
         {
           method: 'GET',
+          credentials: 'include'
         }
       )
       .then((result) => { return result.json() })
       .then((resultJson) => {
         this.setState({
           targetUser: resultJson,
-          editable: editable
+          editable: editable,
+          user: props.user,
+          followed: resultJson.followed
         })
       })
       .catch((err) => {
@@ -217,41 +219,85 @@ class Profile extends Component {
   }
 
   getProfile(props) {
-    console.log('getprofile');
-    console.log(props);
     let target = null;
-    if (props.isLoggedIn && typeof props.match === 'undefined') {
+    if (props.user && typeof props.match === 'undefined') { // same user
       target = props.user.id;
-      this.getUser(target, true);
-    } else if (props.isLoggedIn && props.match.match.params.user) {
+      this.getUser(target, true, props);
+    } else if (props.user && props.match.match.params.user) { //user specified follower, maybe same user         
       let editable = false;
       target = props.match.match.params.user;
-      if (target === props.user.id) {
+      if (target === props.user.id) { // only same user can edit their own profile
         editable = true;
       }
-      this.getUser(target, editable);
-    } else if (!props.isLoggedIn && typeof props.match !== 'undefined') {
-      console.log(props.match);
+      this.getUser(target, editable, props);
+    } else if (!props.user && typeof props.match !== 'undefined') {  // can view user even though not logged in, cannot edit if same user, must  be logged in
       target = props.match.match.params.user;
-      this.getUser(target, false); 
+      this.getUser(target, false, props); 
     } else {
       console.log('wuoe');
-      /*
-      this.setState({
-        targetUser: null,
-        editable: false,
-        isLoggedIn:false,
-        user: null
-      })
-      */
     }
   }
+
   componentWillReceiveProps(nextProps) {
-    console.log('willreceive');
     this.getProfile(nextProps);
   }
 
+  doFollowUnfollow(toFollow) {
+    let path = 'follow';
+    if (!toFollow) {
+      path = 'unfollow';
+    }
+    let target = typeof this.state.targetUser !== 'undefined'?this.state.targetUser:null;
+    if (target) {
+      fetch(Config.default.host + path,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({target:target})
+        }
+      )
+      .then((result) => { return result.json() })
+      .then((resultJson) => {
+        if (resultJson.nModified || (resultJson.upserted && resultJson.upserted.length) || (!toFollow && resultJson.n === 1)) {
+          this.setState({
+            followed: toFollow
+          });
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+    }
+
+  }
+
+  follow() {
+    this.doFollowUnfollow(true);
+  }
+
+  unfollow() {
+    this.doFollowUnfollow(false);
+  }
+
   render() {
+    /*
+    let follow = null;
+    if (this.state.user && this.state.targetUser && this.state.targetUser._id !== this.state.user.id && !this.state.followed) {
+      if (typeof this.state.targetUser.followers === 'undefined' || typeof this.state.targetUser.followers[this.props.user.id] === 'undefined') {
+        follow = <span><RB.Button onClick={this.follow}>follow</RB.Button></span>;
+      } else {
+        follow = <span><RB.Button onClick={this.unfollow}>Unfollow</RB.Button></span>;
+      }
+    }
+    */
+    let follow = null;
+    if (this.state.followed != null) {
+      follow = this.state.followed?<RB.Button onClick={this.unfollow}>Unfollow</RB.Button>:<RB.Button onClick={this.follow}>Follow</RB.Button>;
+    }
     return (
       <div>
         <div>
@@ -260,6 +306,9 @@ class Profile extends Component {
           </div>
           <div>
             {this.state.targetUser?<span>{this.state.targetUser.uname}</span>:null}
+          </div>
+          <div>
+            {follow}
           </div>
           <div>
           </div>
